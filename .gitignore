@@ -1,0 +1,22 @@
+#Don't need these annotations, I have a different set
+annotations/**
+#Don't need these audio files, I am using the game_ audio set
+calls/**
+#don't need data
+data
+#Don't need failure analysis, I can create that later.
+failure-analysis
+#These are old annotations.  Instead use Processed-Fireboy-Annotations
+fire-boy-annotations-main
+#Exclude midleve-master zip file.
+midlevel-master.*
+#Don't need the L and R files, I can always include them later
+**/L and R Files
+#Do not need the utep-dissatisfaction-corpus.
+utep-dissatisfaction-corpus-master
+utep-dissatisfaction-corpus-master.*
+#Remove the backup files, I have processed the files already.
+Fire-boy-sound backup
+Fire-boy-sound
+#Remove midlevel master, I can install it on my own.
+midlevel-master
