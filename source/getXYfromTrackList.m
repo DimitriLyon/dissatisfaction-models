@@ -11,6 +11,10 @@ function [X, y, frameTrackNums, frameUtterances, frameTimes] = ...
     frameUtterances = [];
     frameTimes = [];
     
+    %Dimitri - Magic value for my specific annotation directory
+    %
+    annotationFolder = 'Processed-Fireboy-Annotations';
+    
     nTracks = size(trackList, 2);
     for trackNum = 1:nTracks
         
@@ -19,8 +23,9 @@ function [X, y, frameTrackNums, frameUtterances, frameTimes] = ...
         fprintf('[%d/%d] Getting X and y for %s\n', trackNum, nTracks, ...
             track.filename);
     
+        %Modify getXYfromFile to take the track's side.
         [dialogX, dialogY, dialogFrameUtterances, dialogFrameTimes] = ...
-            getXYfromFile(track.filename, featureSpec);
+            getXYfromFile(track.filename, track.side, featureSpec, annotationFolder, track.directory);
         
         % skip this track if there are no useable annotations for it
         if ~size(dialogX, 1)

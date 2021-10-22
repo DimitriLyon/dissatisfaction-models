@@ -1,17 +1,29 @@
 function [X, y, frameUtterances, frameTimes] = ...
-    getXYfromFile(filename, featureSpec)
-    
+    getXYfromFile(filename, side, featureSpec, annotationFolder, soundFolder)
+    %Dimitri - Add another parameter for the aud
+
     % get the annotation filename from the dialog filename, assuming they 
     % have the same name, then use this to get the annotation table
     [~, name, ~] = fileparts(filename);
     annFilename = append(name, ".txt");
-    annotationPath = append('annotations/', annFilename);
+    if(annotationFolder(end) ~= '/') 
+        annotationFolder = append(annotationFolder, '/');
+    end
+    
+    if side == 'l'
+        annotationSide = 'left';
+    else
+        annotationSide = 'right';
+    end
+    
+    annotationPath = append(annotationFolder, annFilename);
     useFilter = true;
-    annotationTable = readElanAnnotation(annotationPath, useFilter);
+    annotationTable = readElanAnnotation(annotationPath, useFilter, annotationSide);
     
     % get the monster
-    customerSide = 'l';
-    trackSpec = makeTrackspec(customerSide, filename, './calls/');
+    customerSide = side;
+    %Dimitri change - instead of ./calls/, use the sound folder parameter
+    trackSpec = makeTrackspec(customerSide, filename, soundFolder);
     [~, monster] = makeTrackMonster(trackSpec, featureSpec);
     
     nFrames = size(monster, 1);

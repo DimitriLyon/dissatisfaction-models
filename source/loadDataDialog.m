@@ -2,7 +2,7 @@
 
 dataDir = append(pwd, '/data/dialog-level');
 
-featureSpec = getfeaturespec('./source/mono-old.fss');
+featureSpec = getfeaturespec('./source/mono.fss');
 
 tracklistTrainDialog = gettracklist('tracklists-dialog/train.tl');
 tracklistDevDialog = gettracklist('tracklists-dialog/dev.tl');

@@ -1,11 +1,12 @@
-function annotationTable = readElanAnnotation(trackFilename, useFilter)
+function annotationTable = readElanAnnotation(trackFilename, useFilter, annotationTrackName)
 % READELANANNOTATION Read utterance annotations from default ELAN 
 % tab-delimited export to MATLAB table. If useFilter is true, regions 
 % labeled other as neutral and disappointed are ignored.
 
-    [~, name, ~] = fileparts(trackFilename);
+    [annotationFolder, name, ~] = fileparts(trackFilename);
     annFilename = append(name, ".txt");
-    annotationPathRelative = append('annotations/', annFilename);
+    annotationFolder = append(annotationFolder,'/');
+    annotationPathRelative = append(annotationFolder, annFilename);
     
     annotationPathFull = fullfile(pwd, annotationPathRelative);
 
@@ -27,9 +28,11 @@ function annotationTable = readElanAnnotation(trackFilename, useFilter)
     annotationTable = readtable(annotationPathFull, importOptions);
     
     % if filter argument was passed, delete rows with labels other than "n"
-    % "nn" "d" or "dd"
+    % "nn" "d" "dd" "do" "ds" "dg" "dr" or "p", as well as rows with a tier
+    % different from the annotationTrackName
     if useFilter
-        toDelete = ismember(annotationTable.label, ["n" "nn" "d" "dd"]);
+        toDelete = ismember(annotationTable.label, ["n" "nn" "d" "dd" "do" "ds" "dg" "dr" "p"]) & ...
+            annotationTable.tier == annotationTrackName;
         annotationTable(~toDelete, :) = [];
     end
     

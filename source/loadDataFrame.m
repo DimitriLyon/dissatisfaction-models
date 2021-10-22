@@ -5,6 +5,7 @@ dataDir = append(pwd, '/data/frame-level');
 
 featureSpec = getfeaturespec('./source/mono.fss');
 
+%TODO change these
 tracklistTrainFrame = gettracklist('tracklists-frame/train.tl');
 tracklistDevFrame = gettracklist('tracklists-frame/dev.tl');
 tracklistTestFrame = gettracklist('tracklists-frame/test.tl');
