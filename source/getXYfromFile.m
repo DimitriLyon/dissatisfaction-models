@@ -41,7 +41,7 @@ function [X, y, frameUtterances, frameTimes] = ...
         isFrameAnnotated(frameStart:frameEnd) = true;
         y(frameStart:frameEnd) = labelToFloat(row.label);
         frameUtterances(frameStart:frameEnd) = rowNum;
-    end
+    end	
     
     [monHeight,~] = size(monster);
     [isFAHeight,~] = size(isFrameAnnotated);
