@@ -42,7 +42,12 @@ function [X, y, frameUtterances, frameTimes] = ...
         y(frameStart:frameEnd) = labelToFloat(row.label);
         frameUtterances(frameStart:frameEnd) = rowNum;
     end
-
+    
+    [monHeight,~] = size(monster);
+    [isFAHeight,~] = size(isFrameAnnotated);
+    newHeight = min(monHeight,isFAHeight);
+    monster = monster(1:newHeight,:);
+    isFrameAnnotated = isFrameAnnotated(1:newHeight,:);
     % TODO remove isFrameAnnotated and use y directly
     matchingFrameNums = find(isFrameAnnotated);
 

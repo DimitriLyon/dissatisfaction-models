@@ -29,3 +29,9 @@ Fire-boy-sound
 
 #Remove midlevel master, I can install it on my own.
 midlevel-master
+
+#Remove the plan file
+DimitrPlan.txt
+
+#Remove profiling analysis
+Profiling Analysis

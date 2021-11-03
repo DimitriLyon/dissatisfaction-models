@@ -60,8 +60,8 @@ Game 20:
 E - r
 N - l
 Game 21:
-N - l
 E - r
+N - l
 Game 22:
 W - l
 F - r
@@ -73,8 +73,8 @@ Game 24:
 F - l
 W - r
 Game 25:
-W-r
-F-l
+W - r
+F - l
 
 Make sure the .txt files have the diss annotations.
 
