@@ -2,7 +2,7 @@
 % A frame-level linear regression model.
 
 % configuration
-useTestSet = false; % to set the "compare" set as either the dev or test set
+useTestSet = true; % to set the "compare" set as either the dev or test set
 beta = 0.25; % to calculate F-score
 
 loadDataFrame;

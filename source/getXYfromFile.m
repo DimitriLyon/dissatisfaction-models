@@ -41,13 +41,37 @@ function [X, y, frameUtterances, frameTimes] = ...
         isFrameAnnotated(frameStart:frameEnd) = true;
         y(frameStart:frameEnd) = labelToFloat(row.label);
         frameUtterances(frameStart:frameEnd) = rowNum;
-    end	
+    end
     
-    [monHeight,~] = size(monster);
+    
+    
+    %Boolean condition to determine if to set the frames where speech is
+    %detected that aren't already annotated to neutral (0)
+    setNotAnnotatedSpeakingToNeutral = true;
+    if setNotAnnotatedSpeakingToNeutral
+        [rate,signalS] =  readtracks(trackSpec.path);
+        if trackSpec.side == 'l'
+            relevantSig = signalS(1);
+        else
+            relevantSig = signalS(2);
+        end
+        logEng = computeLogEnergy(relevantSig', rate);
+        spokenFrames = speakingFrames(logEng)';
+        sFIndices = find(spokenFrames);
+        iFAIndices = find(isFrameAnnotated);
+        framestoSetToNeutral = setdiff(sFIndices,iFAIndices);
+        y(framestoSetToNeutral) = 0;
+        isFrameAnnotated(framestoSetToNeutral) = true;
+    end
+    
+    %Deals with edge case related to annotations that go to the very end of
+    %the audio
+    [monsterHeight,~] = size(monster);
     [isFAHeight,~] = size(isFrameAnnotated);
-    newHeight = min(monHeight,isFAHeight);
+    newHeight = min(monsterHeight,isFAHeight);
     monster = monster(1:newHeight,:);
     isFrameAnnotated = isFrameAnnotated(1:newHeight,:);
+    
     % TODO remove isFrameAnnotated and use y directly
     matchingFrameNums = find(isFrameAnnotated);
 
