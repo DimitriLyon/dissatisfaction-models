@@ -44,19 +44,20 @@ function [X, y, frameUtterances, frameTimes] = ...
     end
     
     
-    
+    %Used for both the automatic neutral annotations and the debug
+    %graph.
+    [rate,signalS] =  readtracks(trackSpec.path);
+    if trackSpec.side == 'l'
+        relevantSig = signalS(:,1);
+    else
+        relevantSig = signalS(:,2);
+    end
+    logEng = computeLogEnergy(relevantSig', rate/100);
+    spokenFrames = speakingFrames(logEng)';
     %Boolean condition to determine if to set the frames where speech is
     %detected that aren't already annotated to neutral (0)
     setNotAnnotatedSpeakingToNeutral = true;
     if setNotAnnotatedSpeakingToNeutral
-        [rate,signalS] =  readtracks(trackSpec.path);
-        if trackSpec.side == 'l'
-            relevantSig = signalS(1);
-        else
-            relevantSig = signalS(2);
-        end
-        logEng = computeLogEnergy(relevantSig', rate);
-        spokenFrames = speakingFrames(logEng)';
         sFIndices = find(spokenFrames);
         iFAIndices = find(isFrameAnnotated);
         framestoSetToNeutral = setdiff(sFIndices,iFAIndices);
@@ -64,17 +65,26 @@ function [X, y, frameUtterances, frameTimes] = ...
         isFrameAnnotated(framestoSetToNeutral) = true;
     end
     
+    
+    
+    
+    
     %Deals with edge case related to annotations that go to the very end of
     %the audio
     [monsterHeight,~] = size(monster);
     [isFAHeight,~] = size(isFrameAnnotated);
-    newHeight = min(monsterHeight,isFAHeight);
+    yHeight = length(y);
+    newHeight = min([monsterHeight,isFAHeight,yHeight]);
     monster = monster(1:newHeight,:);
     isFrameAnnotated = isFrameAnnotated(1:newHeight,:);
+    y = y(1:newHeight,:);
     
     % TODO remove isFrameAnnotated and use y directly
     matchingFrameNums = find(isFrameAnnotated);
+    %matchingFrameNums = find(y ~= -1);
 
+    assert(isequal(find(y~=-1),find(isFrameAnnotated)))
+    
     X = monster(isFrameAnnotated, :);
     y = y(isFrameAnnotated);
     frameTimes = arrayfun(@(frameNum) frameNumToTime(frameNum), ...
