@@ -66,7 +66,7 @@ else
     %% normalize
     % normalize training data
     [XtrainFrame, centeringValuesFrame, scalingValuesFrame] = ...
-        normalizeMod(XtrainFrame);
+        normalize(XtrainFrame);
 
     % normalize dev and test data using the same centering values and scaling 
     % values used to normalize the train data
