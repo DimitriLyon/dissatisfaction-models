@@ -37,11 +37,21 @@ function [X, y, frameUtterances, frameTimes] = ...
     for rowNum = 1:nRows
         row = annotationTable(rowNum, :);
         frameStart = round(milliseconds(row.startTime) / 10);
+        if frameStart == 0
+            frameStart = 1;
+        end
         frameEnd = round(milliseconds(row.endTime) / 10);
         isFrameAnnotated(frameStart:frameEnd) = true;
         y(frameStart:frameEnd) = labelToFloat(row.label);
         frameUtterances(frameStart:frameEnd) = rowNum;
     end
+    
+    %Dissatisfied is 1
+    %Neutral is 0
+    %Out of character is -1.  These frames are annotated so that
+    %isFrameAnnotated is set to true for these frames.  This is so that the
+    %code that automatically detects speech does not annotate the out of
+    %character frames as neutral.
     
     
     %Used for both the automatic neutral annotations and the debug
@@ -79,11 +89,16 @@ function [X, y, frameUtterances, frameTimes] = ...
     isFrameAnnotated = isFrameAnnotated(1:newHeight,:);
     y = y(1:newHeight,:);
     
+    
+    %Remove out of character frames from isFrameAnnotated.
+    isFrameAnnotated(y == -1) = false;
+    
+    
     % TODO remove isFrameAnnotated and use y directly
     matchingFrameNums = find(isFrameAnnotated);
-    %matchingFrameNums = find(y ~= -1);
-
-    assert(isequal(find(y~=-1),find(isFrameAnnotated)))
+    %matchingFrameNums = find(y ~= -1)
+    %This assert no longer works.
+    %assert(isequal(find(y~=-1),find(isFrameAnnotated)))
     
     X = monster(isFrameAnnotated, :);
     y = y(isFrameAnnotated);

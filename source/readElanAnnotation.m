@@ -31,7 +31,7 @@ function annotationTable = readElanAnnotation(trackFilename, useFilter, annotati
     % "nn" "d" "dd" "do" "ds" "dg" "dr" or "p", as well as rows with a tier
     % different from the annotationTrackName
     if useFilter
-        toDelete = ismember(annotationTable.label, ["n" "nn" "d" "dd" "do" "ds" "dg" "dr" "p"]) & ...
+        toDelete = ismember(annotationTable.label, ["n" "nn" "d" "dd" "do" "ds" "dg" "dr" "p" "o"]) & ...
             annotationTable.tier == annotationTrackName;
         annotationTable(~toDelete, :) = [];
     end
