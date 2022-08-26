@@ -1,5 +1,8 @@
 function [X, y, frameUtterances, frameTimes] = ...
-    getXYfromFile(filename, side, featureSpec, annotationFolder, soundFolder)
+    getXYfromFileIterable(filename, side, featureSpec, annotationFolder,...
+    soundFolder, silenceSpeakRatio)
+    %Dimitri - Add another parameter for the aud
+
     % get the annotation filename from the dialog filename, assuming they 
     % have the same name, then use this to get the annotation table
     [~, name, ~] = fileparts(filename);
@@ -8,9 +11,7 @@ function [X, y, frameUtterances, frameTimes] = ...
         annotationFolder = append(annotationFolder, '/');
     end
     
-    if side == 'l' && strcmp(soundFolder, './calls/')
-        annotationSide = 'default';
-    elseif side == 'l'
+    if side == 'l'
         annotationSide = 'left';
     else
         annotationSide = 'right';
@@ -26,8 +27,21 @@ function [X, y, frameUtterances, frameTimes] = ...
     customerSide = side;
     %Dimitri change - instead of ./calls/, use the sound folder parameter
     trackSpec = makeTrackspec(customerSide, filename, soundFolder);
-    [~, monster] = makeTrackMonster(trackSpec, featureSpec);
+    %Cache monster for later
+    monsterDir = [trackSpec.directory 'monsterCache/'];
+    monsterSavekey = [trackSpec.filename trackSpec.side];
+    monsterFileName = [monsterDir monsterSavekey '.mat'];
     
+    if ~exist(monsterDir, 'dir')
+        mkdir (monsterDir);
+    end
+    
+    if exist(monsterFileName, 'file') ~= 2
+        [~, monster] = makeTrackMonster(trackSpec, featureSpec);
+        save(monsterFileName, 'monster');
+    else
+        load(monsterFileName,'monster');
+    end
     nFrames = size(monster, 1);
     
     % iterate annotation rows and keep track of which frames are
@@ -43,9 +57,6 @@ function [X, y, frameUtterances, frameTimes] = ...
             frameStart = 1;
         end
         frameEnd = round(milliseconds(row.endTime) / 10);
-        if frameEnd > nFrames
-            frameEnd = nFrames;
-        end
         isFrameAnnotated(frameStart:frameEnd) = true;
         y(frameStart:frameEnd) = labelToFloat(row.label);
         frameUtterances(frameStart:frameEnd) = rowNum;
@@ -68,7 +79,7 @@ function [X, y, frameUtterances, frameTimes] = ...
         relevantSig = signalS(:,2);
     end
     logEng = computeLogEnergy(relevantSig', rate/100);
-    spokenFrames = speakingFrames(logEng)';
+    spokenFrames = speakingFramesIterable(logEng,silenceSpeakRatio)';
     %Boolean condition to determine if to set the frames where speech is
     %detected that aren't already annotated to neutral (0)
     setNotAnnotatedSpeakingToNeutral = false;

@@ -1,47 +1,29 @@
 % loadDataFrame.m
 % Loads data for frame-level models.
 
-dataDir = append(pwd, '/data-switchboard/frame-level-unanimous');
-
 featureSpec = getfeaturespec('./source/mono.fss');
 
-tracklistDirectory = 'tracklists-switch/';
+tracklistDirectory = 'tracklists-frame/';
 
 tracklistTrainFrame = gettracklist(append(tracklistDirectory,'train.tl'));
 tracklistDevFrame = gettracklist(append(tracklistDirectory,'dev.tl'));
 tracklistTestFrame = gettracklist(append(tracklistDirectory,'test.tl'));
 
-% create the data directory if it doesn't exist
-if ~exist(dataDir, 'dir')
-    mkdir(dataDir) 
-end
-
-% count the number of .mat files in the data directory
-files = dir(append(dataDir, '/*.mat'));
-numFiles = size(files, 1);
-
-% load all .mat files if any are found, else recompute all data and save
-% them for future runs 
-if numFiles
-    for i = 1:numFiles
-        load(append(dataDir, '/', files(i).name))
-    end
-else
     
     % compute train data
     [XtrainFrame, yTrainFrame, trackNumsTrainFrame, ...
         utterNumsTrainFrame, frameTimesTrainFrame] = ...
-        getXYfromTrackList(tracklistTrainFrame, featureSpec);
+        getXYfromTrackListIterable(tracklistTrainFrame, featureSpec, silenceSpeakRatio);
     
     % compute dev data
     [XdevFrame, yDevFrame, trackNumsDevFrame, ...
         utterNumsDevFrame, frameTimesDevFrame] = ...
-        getXYfromTrackList(tracklistDevFrame, featureSpec);
+        getXYfromTrackListIterable(tracklistDevFrame, featureSpec, silenceSpeakRatio);
 
     % compute test data
     [XtestFrame, yTestFrame, trackNumsTestFrame, ...
         utterNumsTestFrame, frameTimesTestFrame] = ...
-        getXYfromTrackList(tracklistTestFrame, featureSpec);
+        getXYfromTrackListIterable(tracklistTestFrame, featureSpec, silenceSpeakRatio);
 
     %% balance train data
     rng(20210419); % set seed for reproducibility
@@ -72,22 +54,20 @@ else
 
     % normalize dev and test data using the same centering values and scaling 
     % values used to normalize the train data
-    XdevFrame = normalizeMod(XdevFrame);
-    XtestFrame = normalizeMod(XtestFrame);
+    XdevFrame = normalizeMod(XdevFrame, 'center', centeringValuesFrame, ...
+        'scale', scalingValuesFrame);
+    XtestFrame = normalizeMod(XtestFrame, 'center', centeringValuesFrame, ...
+        'scale', scalingValuesFrame);
 
     %% save variables
-    save(append(dataDir, '/train.mat'), 'XtrainFrame', ...
-        'yTrainFrame', 'trackNumsTrainFrame', ...
-        'utterNumsTrainFrame', 'frameTimesTrainFrame', ...
-        '-v7.3');
-    save(append(dataDir, '/dev.mat'), 'XdevFrame', ...
-        'yDevFrame', 'trackNumsDevFrame', ...
-        'utterNumsDevFrame', 'frameTimesDevFrame', ...
-        '-v7.3');
-    save(append(dataDir, '/test.mat'), 'XtestFrame', ...
-        'yTestFrame', 'trackNumsTestFrame', ...
-        'utterNumsTestFrame', 'frameTimesTestFrame', ...
-        '-v7.3');
-end
+    %save(append(dataDir, '/train.mat'), 'XtrainFrame', ...
+    %    'yTrainFrame', 'trackNumsTrainFrame', ...
+    %    'utterNumsTrainFrame', 'frameTimesTrainFrame');
+    %save(append(dataDir, '/dev.mat'), 'XdevFrame', ...
+    %    'yDevFrame', 'trackNumsDevFrame', ...
+    %    'utterNumsDevFrame', 'frameTimesDevFrame');
+    %save(append(dataDir, '/test.mat'), 'XtestFrame', ...
+    %    'yTestFrame', 'trackNumsTestFrame', ...
+    %    'utterNumsTestFrame', 'frameTimesTestFrame');
 
 % clear unnecessary variables here
