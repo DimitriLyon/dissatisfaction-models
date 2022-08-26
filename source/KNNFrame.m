@@ -7,20 +7,6 @@ beta = 0.25; % to calculate F-score
 
 loadDataFrame;
 
-%control if majority of training frames are thrown out
-cullData = true;
-if cullData
-    %cull to 1/100 frames
-    rng(20210419);
-    trainLength = length(yTrainFrame);
-    trainCullSize = floor(trainLength / 100);
-    trainIndices = randsample(trainLength, trainCullSize);
-    XtrainFrame = XtrainFrame(trainIndices,:);
-    yTrainFrame = yTrainFrame(trainIndices,:);
-end
-% train regressor
-regressor = fitlm(XtrainFrame, yTrainFrame);
-
 % depending on useTestSet, the "compare" set is either the dev or test set
 if useTestSet
     XcompareFrame = XtestFrame; %#ok<*UNRCH>
@@ -38,39 +24,36 @@ else
     utterNumsCompareFrame = utterNumsDevFrame;
 end
 
-if cullData
-    compareLength = length(yCompareFrame);
-    compareCullSize = floor(compareLength/100);
-    disp(compareLength);
-    disp(compareCullSize);
-    compareIndices = randsample(compareLength, compareCullSize);
-    XcompareFrame = XcompareFrame(compareIndices, :);
-    yCompareFrame = yCompareFrame(compareIndices, :);
-end
-    
-%% print coefficient info
-coeffs = regressor.Coefficients.Estimate;
-coeffs(1) = []; % discard the first coefficient (intercept)
-[coefficientSorted, coeffSortedIdx] = sort(coeffs, 'descend');
-fprintf('Coefficients sorted by value, descending order with format:\n');
-fprintf('coefficient number, value, feature abbreviation\n');
-for i = 1:length(coeffs)
-    coeffNum = coeffSortedIdx(i);
-    coeffValue = coefficientSorted(i);
-    
-    % there may be more features than specified in featureSpec
-    % (for now there is only the extra time feature)
-    if coeffNum <= length(featureSpec)
-        coeffAbbrev = featureSpec(coeffNum).abbrev;
-    else
-        coeffAbbrev = 'NA (not specified in featureSpec)'; 
-    end
-    
-    fprintf('%3d | %+f | %s\n', coeffNum, coeffValue, coeffAbbrev);
-end
+disp(length(yCompareFrame));
+
+%% cull data
+%  take only 1/1000 of frames
+
+rng(20210419);
+trainLength = length(yTrainFrame);
+trainCullSize = floor(trainLength / 100);
+
+trainIndices = randsample(trainLength, trainCullSize);
+XtrainFrame = XtrainFrame(trainIndices,:);
+yTrainFrame = yTrainFrame(trainIndices,:);
+
+compareLength = length(yCompareFrame);
+compareCullSize = floor(compareLength/100);
+disp(compareLength);
+disp(compareCullSize);
+compareIndices = randsample(compareLength, compareCullSize);
+XcompareFrame = XcompareFrame(compareIndices, :);
+yCompareFrame = yCompareFrame(compareIndices, :);
+
+
+%% train regressor
+knnModel = fitcknn(XtrainFrame, yTrainFrame, 'Distance', 'euclidean', ...
+    'NSMethod', 'exhaustive', 'NumNeighbors', 1);
+
+
 
 %%  predict on the compare set
-yPred = predict(regressor, XcompareFrame);
+yPred = predict(knnModel, XcompareFrame);
 
 % the baseline always predicts dissatisfied (assume 1 for dissatisfied)
 yBaseline = ones(size(yPred));
@@ -78,54 +61,26 @@ yBaseline = ones(size(yPred));
 %% try different dissatisfaction thresholds to find the best F-score
 mse = @(actual, pred) (mean((actual - pred) .^ 2));
 
-% try thresholdNum thresholds between thresholdMin and thresholdMax
-thresholdMin = -1;
-thresholdMax = 1;
-thresholdNum = 1000;
-thresholds = linspace(thresholdMin, thresholdMax, thresholdNum);
 
-% create a table to store results
-varTypes = {'double', 'double', 'double', 'double', 'double'};
-varNames = {'threshold', 'mse', 'fscore', 'precision', 'recall'};
-sz = [thresholdNum, length(varNames)];
-resultTable = table('Size', sz, 'VariableTypes', varTypes, ...
-    'VariableNames', varNames);
-
-% populate results table
-for thresholdNum = 1:length(thresholds)
-    threshold = thresholds(thresholdNum);
-    yPredAfterThreshold = yPred >= threshold;
-    [score, precision, recall] = fScore(yCompareFrame, ...
-        yPredAfterThreshold, 1, 0, beta);
-    resultTable{thresholdNum, 1} = threshold;
-    resultTable{thresholdNum, 2} = mse(yPredAfterThreshold, yCompareFrame);
-    resultTable{thresholdNum, 3} = score;
-    resultTable{thresholdNum, 4} = precision;
-    resultTable{thresholdNum, 5} = recall;
-end
-
+predMSE = mse(yPred, yCompareFrame);
+[score, precision, recall] = fScore(yCompareFrame, ...
+        yPred, 1, 0, beta);
 % print yPred stats
 fprintf('min(yPred)=%.2f, max(yPred)=%.2f, mean(yPred)=%.2f\n', ...
     min(yPred), max(yPred), mean(yPred));
 
-% print threshold stats
-[maxScore, maxScoreIdx] = max(resultTable{:, 3});
-bestThreshold = resultTable{maxScoreIdx, 1};
-fprintf('dissThreshold=%.3f\n', bestThreshold);
+
 
 % print regressor stats
-fprintf('regressorRsquared=%.2f\n', regressor.Rsquared.adjusted);
-regressorPrecision = resultTable{maxScoreIdx, 4};
-regressorRecall = resultTable{maxScoreIdx, 5};
-regressorMSE = resultTable{maxScoreIdx, 2};
+
 fprintf('regressorFscore=%.2f, regressorPrecision=%.2f, regressorRecall=%.2f, regressorMSE=%.2f\n', ...
-    maxScore, regressorPrecision, regressorRecall, regressorMSE);
+    score, precision, recall, predMSE);
 
 % print baseline stats
-yBaselineAfterThreshold = yBaseline >= bestThreshold;
-baselineMSE = mse(yBaselineAfterThreshold, yCompareFrame);
+
+baselineMSE = mse(yBaseline, yCompareFrame);
 [baselineFscore, baselinePrecision, baselineRecall] = ...
-    fScore(yCompareFrame, yBaselineAfterThreshold, 1, 0, beta);
+    fScore(yCompareFrame, yBaseline, 1, 0, beta);
 fprintf('baselineFscore=%.2f, baselinePrecision=%.2f, baselineRecall=%.2f, baselineMSE=%.2f\n', ...
     baselineFscore, baselinePrecision, baselineRecall, baselineMSE);
 
