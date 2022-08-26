@@ -11,13 +11,7 @@ function [X, y, frameTrackNums, frameUtterances, frameTimes] = ...
     frameUtterances = [];
     frameTimes = [];
     
-    %Dimitri - Magic value for my specific annotation directory
-    %For cross testing
-    annotationFolder = 'annotations2';
-    %For utep call corpus
-    %annotationFolder = 'annotations';
-    %For Watergirl corpus
-    %annotationFolder = 'Processed-Fireboy-Annotations';
+    annotationFolder = 'annotations';
     nTracks = size(trackList, 2);
     for trackNum = 1:nTracks
         
